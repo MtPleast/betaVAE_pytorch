@@ -7,7 +7,7 @@ import os
 
 from betaVAE_dataset import return_data
 from betaVAE_model import Encoder_MNIST,Decoder_MNIST,Encoder_3Dchairs,Decoder_3Dchairs,Encoder_dsprites,Decoder_dsprites
-from betaVAE_show import showimg,travel_img_showimg
+from betaVAE_show import showimg,travel_img_showimg, show_active_units
 
 def mkdir(path):
 	path=path.strip()
@@ -78,6 +78,7 @@ class Solver(object):
 		self.z_travese_limit = args.z_travese_limit
 		self.z_travese_interval = args.z_travese_interval
 		self.z_travese_number_per_line = args.z_travese_number_per_line
+		self.var_threshold = args.var_threshold
 		# result
 		self.generated_images_path = self.result_path_current_dataset + 'generated_images/'
 		self.travese_z_path = args.load_model_path + 'travese_z_'+str(self.z_travese_sample_imgth)+'/'
@@ -142,6 +143,7 @@ class Solver(object):
 				
 				img = img.to(self.device)
 				z_en = self.encoder(img)
+				# print('z_en size: ',z_en.size())
 				mu,logvar,z_de = self.reparameterizetion(z_en)
 				img_decoder = self.decoder(z_de)
 				
@@ -173,14 +175,32 @@ class Solver(object):
 					
 					img = img.squeeze()
 					showimg(img,self.train_step,'groundtruth',self.datasetname,self.generated_images_path,self.show_img_step)
+					
 					img_decoder = img_decoder.squeeze()
-					showimg(img_decoder,self.train_step,'recon',self.datasetname,self.generated_images_path,self.show_img_step)
+					# print('img_decoder: ',img_decoder)
+
+					# numpy_img_decoder = img_decoder.detach().cpu().numpy()
+					# mean_img_decoder = np.mean(numpy_img_decoder)
+					# print('mean_img_decoder:  ',mean_img_decoder)
+
+					img_decoder_01 = torch.zeros(img_decoder.size()).type_as(img_decoder)
+					img_decoder_01[img_decoder >= 0.5] = 1
+					
+					showimg(img_decoder_01,self.train_step,'recon',self.datasetname,self.generated_images_path,self.show_img_step)
 					sample_z = torch.from_numpy(np.random.normal( 0, 1, size=z_de.size()))
 					sample_z = sample_z.float()
 					sample_z = sample_z.to(self.device)
 					sample_x = self.decoder(sample_z)
 					sample_x = sample_x.squeeze()
 					showimg(sample_x,self.train_step,'sample',self.datasetname,self.generated_images_path,self.show_img_step)
+					
+
+					# show active units
+					show_active_units(self.z_dim, self.trainloader, self.datasetname, self.encoder, self.var_threshold)
+				
+
+
+
 				if self.train_step % self.save_model_step == self.save_model_step - 1:
 					# model save
 					model_state = {'encoder':self.encoder,'decoder':self.decoder}
@@ -205,6 +225,9 @@ class Solver(object):
 		self.decoder = checkpoint['model_state']['decoder']
 		print('z_dim:',self.z_dim)
 		print('beta_weight:',self.beta_weight)
+
+		# 输出有几个active的units
+		show_active_units(self.z_dim, self.trainloader, self.datasetname, self.encoder, self.var_threshold)
 
 		print('travel start')
 		x_sample = self.trainloader.dataset.__getitem__(self.z_travese_sample_imgth)[0]

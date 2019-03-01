@@ -71,25 +71,29 @@ if __name__ == "__main__":
 	parser.add_argument('--z_travese_limit', default=2, type=float, help='z travese limit(dimension max and min)')
 	parser.add_argument('--z_travese_interval', default=0.1, type=float, help='z travese interval(dimension interval)')
 	parser.add_argument('--z_travese_number_per_line', default=10, type=int, help='z travese number displayed per line')
+	parser.add_argument('--var_threshold', default=5e-2, type=float, help='z active units threshold')
 	args = parser.parse_args()
 
 	args.local = True
-	args.datasetname = 'dsprites'
+	args.datasetname = 'MNIST'
 	args.istrain = False
-	args.z_travese_sample_imgth = 1
+	args.z_travese_sample_imgth = 18
 	# print('args.z_travese_sample_imgth: ',args.z_travese_sample_imgth)
 
 	if args.local: #在local
 		args.data_dir = data_dir_local
 		args.result_path_all_dataset = result_path_all_dataset_local
+	
 	# 定义saved model的地址
-	args.load_model_path = args.result_path_all_dataset[args.datasetname]
+	# args.load_model_path = args.result_path_all_dataset[args.datasetname]
+	args.load_model_path = 'E:/pytorch_betaVAE_result/MNIST/MNIST_result11_beta5_zdim32/'
 
 	# 根据不同的数据集进行定义不同的参数值
 	if args.datasetname == 'MNIST':
 		args.z_dim = 10
 		args.image_size = 28
 		args.train_epoch = 50
+
 	
 	elif args.datasetname == '3Dchairs':
 		args.z_dim = 32
