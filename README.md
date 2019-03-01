@@ -1,3 +1,4 @@
 # betaVAE_pytorch
-基于pytorch实现了betaVAE
-
+基于pytorch实现了betaVAE，可以进行betaVAE论文方法
+在实验验证方面，画出原图、重构、sample和z_traverse
+可以使用active_units来计算z中已有的active units有哪些
